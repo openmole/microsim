@@ -6,6 +6,13 @@ package object microsim {
 
   trait IndividualGrouping
 
-  trait Population
+  trait Population {
+    def structure: PopulationStructure
+  }
+
+  /**
+    * Description of a population by classes vector for each individual
+    */
+  type PopulationStructure = Vector[Vector[Int]]
 
 }
