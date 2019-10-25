@@ -1,17 +1,24 @@
 package org.openmole.microsim.synthpop
 
+import org.openmole.microsim
 import org.openmole.microsim._
-import org.openmole.microsim.math.Random
 import org.openmole.microsim.math.Math._
 
 import scala.util.Random
 
 
 case class QIWSPopulationGenerator(
-
+                                  marginals: Vector[Vector[Int]]
                                   ) extends SynthPopGenerator {
 
-  override def generatePopulation(implicit rng: Random): Population =
+  /**
+    * Quasi random sampling, the rng is not used
+    * @param rng
+    * @return
+    */
+  override def generatePopulation(implicit rng: Random): Population = new Population {
+    def structure: PopulationStructure = QIWS.generatePopulation(marginals)
+  }
 
 }
 
@@ -50,7 +57,7 @@ object QIWS {
         sampleWithoutReplacement(quasirandomseq.tail,updatedMarginals,existingPop++Vector(individual))
       }
     }
-    sampleWithoutReplacement(Random.sobolSequence(totalpop,marginals.size),marginals,Vector.empty)._1
+    sampleWithoutReplacement(microsim.math.Random.sobolSequence(totalpop,marginals.size),marginals,Vector.empty)._1
   }
 
 }

@@ -15,4 +15,14 @@ package object microsim {
     */
   type PopulationStructure = Vector[Vector[Int]]
 
+
+  sealed trait StoppingCondition{
+    def iterations: Int
+    def tolerance: Double
+  }
+  final case class MaxIterations(iterations: Int) extends StoppingCondition {def tolerance = 0.0}
+  final case class ToleranceThreshold(tolerance: Double) extends StoppingCondition {def iterations = 0}
+
+
+
 }
