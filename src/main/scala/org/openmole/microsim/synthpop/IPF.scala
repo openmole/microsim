@@ -7,12 +7,24 @@ import org.openmole.microsim.math.ContingencyTable
 import scala.util.Random
 
 
+/**
+  *
+  * see Lovelace, R., Birkin, M., Ballas, D., & van Leeuwen, E. (2015). Evaluating the performance of iterative proportional fitting for spatial microsimulation: new tests for an established technique. Journal of Artificial Societies and Social Simulation, 18(2).
+  *   http://jasss.soc.surrey.ac.uk/18/2/21.html
+  *
+  * @param marginals
+  */
 case class IPFPopulationGenerator(
                                    marginals: Vector[Vector[Int]],
-
+                                   totalPopulation: Int,
+                                   stopping: StoppingCondition
                                  ) extends SynthPopGenerator {
 
-  override def generatePopulation(implicit rng: Random): Population = new Population{def structure: PopulationStructure = Vector.empty }
+  import IPF._
+
+  override def generatePopulation(implicit rng: Random): Population = new Population{
+    def structure: PopulationStructure = integerTableToPopulationStructure(integerizeMaxDiff(generateContingencyTable(marginals,stopping),totalPopulation))
+  }
 
 }
 
@@ -57,8 +69,24 @@ object IPF {
     (iter + 1, newtable, table.flatten.zip(newtable.flatten).map{case (p1,p2) => scala.math.pow(p1 - p2,2)}.sum)
   }
 
-  // TODO implement different integerization algorithms
-  //def integerize(table: ContingencyTable[Double], totalPopulation: Int): ContingencyTable[Int]
+
+  /**
+    * Brutal integerization
+    *  [should implement different integerization algorithms ]
+    * @param table
+    * @param totalPopulation
+    * @return
+    */
+  def integerizeMaxDiff(table: ContingencyTable[Double], totalPopulation: Int): ContingencyTable[Int] = {
+    val integerTable: ContingencyTable[Int] = table.elementWiseMap(d=> scala.math.floor(d*totalPopulation.toDouble).toInt)
+    val diffs = table.zip(integerTable).elementWiseMap{case (d,i) => d - i}
+    val (_,maxmultiind) = diffs.flatten.zip(ContingencyTable.getMultiIndices(table.dimensions)).maxBy(_._1) // rq: must check the multiinds are effectively the good ones when flattening
+    val popdiff = totalPopulation - integerTable.flatten.sum
+    integerTable.set(maxmultiind,popdiff)
+  }
+
+  def integerTableToPopulationStructure(table: ContingencyTable[Int]): PopulationStructure =
+    table.flatten.zip(ContingencyTable.getMultiIndices(table.dimensions)).map{case (count,characs) => Vector.fill(count)(characs)}.fold(Vector.empty){case (v1,v2)=> v1++v2}
 
 
 }
